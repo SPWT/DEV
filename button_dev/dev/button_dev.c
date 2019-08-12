@@ -40,7 +40,12 @@ int flag = 0;
 
 static irq_handler_t eint9_interrupt(int irq, void *dev_id)
 {
-	printk(KERN_EMERG"interrupt9 \r\n");
+	int iValue;
+//	printk(KERN_EMERG"interrupt9 \r\n");
+
+	iValue = gpio_get_value(EXYNOS4_GPX1(1));
+
+	printk(KERN_EMERG"iValue: %d", iValue);
 
 	return IRQ_HANDLED;
 }
@@ -54,7 +59,7 @@ int butOpen(struct inode *p, struct file *f)
 
 	irq = gpio_to_irq(EXYNOS4_GPX1(1));
 	printk(KERN_EMERG"irq: %d EINT(9): %d\r\n", irq, IRQ_EINT(9));
-	err = request_irq(IRQ_EINT(9), eint9_interrupt, IRQ_TYPE_EDGE_FALLING, "eint9", NULL);
+	err = request_irq(IRQ_EINT(9), eint9_interrupt, IRQ_TYPE_EDGE_BOTH, "eint9", NULL);
 	if(err)
 	{
 		printk(KERN_EMERG"request_irq failed\r\n");
@@ -119,20 +124,22 @@ static int but_init()
 	ret = gpio_request(EXYNOS4_GPX1(1), "HOME");
 	if (ret < 0)
 	{
-		printk(KERN_EMERG "ledOpen error: %d\n", ret);
+		printk(KERN_EMERG "butOpen error: %d\n", ret);
 		return ret;
 	}
 
-	s3c_gpio_cfgpin(EXYNOS4_GPL2(0), S3C_GPIO_OUTPUT);
+//	s3c_gpio_cfgpin(EXYNOS4_GPL2(0), S3C_GPIO_OUTPUT);
+	s3c_gpio_cfgpin(EXYNOS4_GPX1(1), S3C_GPIO_SFN(0xF));
 
-	gpio_set_value(EXYNOS4_GPL2(0), 0);
+//	gpio_set_value(EXYNOS4_GPL2(0), 0);
 
 	return 0;
 }
 
 static int but_exit()
 {
-	gpio_free(EXYNOS4_GPL2(0));
+	free_irq(IRQ_EINT(9), NULL);
+	gpio_free(EXYNOS4_GPX1(1));
 	cdev_del(gDev);
 	unregister_chrdev_region(devNum, subDevNum);
 	return 0;

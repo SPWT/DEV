@@ -7,6 +7,6 @@ int main()
 {
 	int fd = open("/dev/butDev", O_RDWR);
 //	write(fd, NULL, NULL);
-	while(1){;};
+	close(fd);
 	return 0;
 }
