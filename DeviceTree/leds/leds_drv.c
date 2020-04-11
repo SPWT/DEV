@@ -1,7 +1,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
-//#include <linux/of.h>
+#include <linux/of.h>
 //#include <linux/of_gpio.h>
 
 
@@ -9,6 +9,16 @@
 
 static int leds_probe(struct platform_device *pdev)
 {
+	struct device_node *node = pdev->dev.of_node;
+	struct property *compatible = NULL;
+	struct property *status = NULL;
+
+	compatible = of_find_property(node, "compatible", NULL);
+	status = of_find_property(node, "status", NULL);
+
+	printk(KERN_ALERT "name: %s, value: %s\n", compatible->name, (char *)compatible->value);
+	printk(KERN_ALERT "name: %s, value: %s\n", status->name, (char *)status->value);
+
 	printk(KERN_ALERT "leds_probe\n");
 
 	return 0;
@@ -48,6 +58,8 @@ static int __init leds_init(void)
 static void __exit leds_exit(void)
 {
 	printk(KERN_ALERT "leds_exit\n");
+
+	platform_driver_unregister(&leds_drv);
 }
 
 module_init(leds_init);
