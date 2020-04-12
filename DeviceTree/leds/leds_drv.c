@@ -2,24 +2,43 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
-//#include <linux/of_gpio.h>
+#include <linux/of_gpio.h>
 
 
 #define DRIVER_NAME "leds_test"
 
+static int gpio_pin[2] = {0};
+
 static int leds_probe(struct platform_device *pdev)
 {
 	struct device_node *node = pdev->dev.of_node;
-	struct property *compatible = NULL;
-	struct property *status = NULL;
-
-	compatible = of_find_property(node, "compatible", NULL);
-	status = of_find_property(node, "status", NULL);
-
-	printk(KERN_ALERT "name: %s, value: %s\n", compatible->name, (char *)compatible->value);
-	printk(KERN_ALERT "name: %s, value: %s\n", status->name, (char *)status->value);
+	int ret;
 
 	printk(KERN_ALERT "leds_probe\n");
+
+	gpio_pin[0] = of_get_named_gpio(node, "gpios1", 0);
+	gpio_pin[1] = of_get_named_gpio(node, "gpios2", 0);
+
+	ret = gpio_request(gpio_pin[0], "les1");
+	if (ret != 0)
+	{
+		printk(KERN_ALERT "gpio_pin[0] request %d failed\n", gpio_pin[0]);
+		return ret;
+	}
+	ret = gpio_request(gpio_pin[1], "les2");
+	if (ret != 0)
+	{
+		printk(KERN_ALERT "gpio_pin[0] request %d failed\n", gpio_pin[0]);
+		return ret;
+	}
+
+	gpio_free(gpio_pin[0]);
+	gpio_free(gpio_pin[1]);
+
+	gpio_direction_output(gpio_pin[0],0);
+	gpio_set_value(gpio_pin[0], 1);
+	gpio_direction_output(gpio_pin[1],0);
+	gpio_set_value(gpio_pin[1], 1);
 
 	return 0;
 }
@@ -27,6 +46,9 @@ static int leds_probe(struct platform_device *pdev)
 static int leds_remove(struct platform_device *pdev)
 {
 	printk(KERN_ALERT "leds_remove\n");
+
+	gpio_set_value(gpio_pin[0], 0);
+	gpio_set_value(gpio_pin[1], 0);
 
 	return 0;
 }
