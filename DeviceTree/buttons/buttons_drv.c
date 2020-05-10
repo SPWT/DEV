@@ -4,15 +4,27 @@
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 
+#include <linux/gpio.h>
+#include <linux/irq.h>
+#include <linux/interrupt.h>
 
 #define DRIVER_NAME "buttons_test"
 
 static int gpio_pin = 0;
 
+static irqreturn_t buttons_irq(int irq, void *dev_id)
+{
+
+	int i = gpio_get_value(gpio_pin);
+	printk(KERN_ALERT "i = %d\n", i);
+
+	return IRQ_RETVAL(IRQ_HANDLED);
+}
+
 static int buttons_probe(struct platform_device *pdev)
 {
 	struct device_node *node = pdev->dev.of_node;
-	int ret;
+	int ret, irq;
 
 	printk(KERN_ALERT "buttons_probe\n");
 
@@ -28,8 +40,9 @@ static int buttons_probe(struct platform_device *pdev)
 	gpio_free(gpio_pin);
 
 	gpio_direction_input(gpio_pin);
-	int i = gpio_get_value(gpio_pin);
-	printk(KERN_ALERT "i = %d\n", i);
+
+	irq = gpio_to_irq(gpio_pin);
+	request_irq(irq, buttons_irq, IRQ_TYPE_EDGE_BOTH, "HOME", pdev);
 
 	return 0;
 }
@@ -37,6 +50,7 @@ static int buttons_probe(struct platform_device *pdev)
 static int buttons_remove(struct platform_device *pdev)
 {
 	printk(KERN_ALERT "buttons_remove\n");
+	free_irq(gpio_to_irq(gpio_pin), pdev);
 
 	return 0;
 }
